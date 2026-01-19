@@ -119,6 +119,8 @@ export const [MathProvider, useMath] = createContextHook((): MathState => {
 
   const setLevel = useCallback((lvl: Level) => {
     setLevelState(lvl);
+    setQuestionSets([]);
+    setCurrentSetIndex(0);
   }, []);
 
   const setDecimalMode = useCallback((enabled: boolean) => {
