@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Question, useMath } from '@/contexts/MathContext';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function PracticeScreen() {
   const {
@@ -30,6 +31,7 @@ export default function PracticeScreen() {
   } = useMath();
 
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const { fs, s, contentMaxWidth } = useResponsive();
 
   useEffect(() => {
     if (!operation || !level) {
@@ -91,14 +93,23 @@ export default function PracticeScreen() {
     resetAnswers();
   };
 
-  const renderQuestion = (question: Question, index: number) => {
+  const renderQuestion = (question: Question, _index: number) => {
     const isAnswered = question.isAnswered;
     const inputValue = inputValues[question.id] || question.userAnswer;
 
     return (
-      <View key={question.id} style={styles.questionCard}>
+      <View
+        key={question.id}
+        style={[
+          styles.questionCard,
+          {
+            borderRadius: s(20),
+            padding: s(20),
+          },
+        ]}
+      >
         <View style={styles.exerciseRow}>
-          <Text style={styles.questionText}>
+          <Text style={[styles.questionText, { fontSize: fs(32) }]}>
             {question.num1} {question.operation} {question.num2} =
           </Text>
 
@@ -106,6 +117,13 @@ export default function PracticeScreen() {
             testID={`answer-input-${question.id}`}
             style={[
               styles.answerInput,
+              {
+                width: s(70),
+                fontSize: fs(24),
+                borderRadius: s(12),
+                paddingHorizontal: s(8),
+                paddingVertical: s(8),
+              },
               isAnswered && styles.answerInputDisabled,
               isAnswered && question.isCorrect && styles.answerInputCorrect,
               isAnswered && !question.isCorrect && styles.answerInputIncorrect,
@@ -128,9 +146,9 @@ export default function PracticeScreen() {
           {isAnswered && (
             <View style={styles.feedbackIcon}>
               {question.isCorrect ? (
-                <Check size={24} color="#4CAF50" strokeWidth={3} />
+                <Check size={fs(24)} color="#4CAF50" strokeWidth={3} />
               ) : (
-                <XIcon size={24} color="#F44336" strokeWidth={3} />
+                <XIcon size={fs(24)} color="#F44336" strokeWidth={3} />
               )}
             </View>
           )}
@@ -146,75 +164,78 @@ export default function PracticeScreen() {
           style={styles.keyboardView}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={styles.header}>
-            <Pressable
-              testID="back-button"
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <ArrowLeft size={24} color="#333" strokeWidth={2.5} />
-            </Pressable>
+          <View style={[styles.innerContainer, { maxWidth: contentMaxWidth, alignSelf: 'center' as const, width: '100%' as const }]}>
+            <View style={[styles.header, { paddingHorizontal: s(20), paddingTop: s(20), paddingBottom: s(16) }]}>
+              <Pressable
+                testID="back-button"
+                style={[styles.backButton, { width: s(44), height: s(44), borderRadius: s(22) }]}
+                onPress={() => router.back()}
+              >
+                <ArrowLeft size={fs(24)} color="#333" strokeWidth={2.5} />
+              </Pressable>
 
-            <View style={styles.scoreContainer}>
-              <View style={styles.scoreRow}>
-                <View style={styles.scoreItem}>
-                  <Text style={styles.scoreNumber}>{score.correct}</Text>
-                  <Check size={16} color="#4CAF50" strokeWidth={3} />
-                </View>
-                <View style={styles.scoreItem}>
-                  <Text style={styles.scoreNumber}>{score.incorrect}</Text>
-                  <XIcon size={16} color="#F44336" strokeWidth={3} />
-                </View>
-                <View style={styles.scoreItem}>
-                  <Text style={styles.scoreNumber}>{score.total}</Text>
+              <View style={styles.scoreContainer}>
+                <View style={[styles.scoreRow, { gap: s(16) }]}>
+                  <View style={[styles.scoreItem, { gap: s(4) }]}>
+                    <Text style={[styles.scoreNumber, { fontSize: fs(18) }]}>{score.correct}</Text>
+                    <Check size={fs(16)} color="#4CAF50" strokeWidth={3} />
+                  </View>
+                  <View style={[styles.scoreItem, { gap: s(4) }]}>
+                    <Text style={[styles.scoreNumber, { fontSize: fs(18) }]}>{score.incorrect}</Text>
+                    <XIcon size={fs(16)} color="#F44336" strokeWidth={3} />
+                  </View>
+                  <View style={styles.scoreItem}>
+                    <Text style={[styles.scoreNumber, { fontSize: fs(18) }]}>{score.total}</Text>
+                  </View>
                 </View>
               </View>
+
+              <Pressable
+                testID="reset-button"
+                style={[styles.resetButton, { backgroundColor: getOperationColor(), paddingHorizontal: s(16), paddingVertical: s(10), borderRadius: s(22) }]}
+                onPress={handleReset}
+              >
+                <Text style={[styles.resetButtonText, { fontSize: fs(16) }]}>Reset</Text>
+              </Pressable>
             </View>
 
-            <Pressable
-              testID="reset-button"
-              style={[styles.resetButton, { backgroundColor: getOperationColor() }]}
-              onPress={handleReset}
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={[styles.scrollContent, { paddingHorizontal: s(20), paddingBottom: s(20), gap: s(16) }]}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.resetButtonText}>Reset</Text>
-            </Pressable>
-          </View>
+              {currentSet?.questions.map((question, index) => renderQuestion(question, index))}
+            </ScrollView>
 
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {currentSet?.questions.map((question, index) => renderQuestion(question, index))}
-          </ScrollView>
+            <View style={[styles.navigationContainer, { paddingHorizontal: s(20), paddingVertical: s(16), gap: s(12) }]}>
+              <Pressable
+                testID="previous-button"
+                style={[
+                  styles.navButton,
+                  styles.previousButton,
+                  { paddingVertical: s(16), borderRadius: s(16) },
+                  !hasPreviousSet && styles.navButtonDisabled,
+                ]}
+                onPress={handlePrevious}
+                disabled={!hasPreviousSet}
+              >
+                <Text style={[styles.navButtonText, { fontSize: fs(18) }, !hasPreviousSet && styles.navButtonTextDisabled]}>
+                  ← Previous
+                </Text>
+              </Pressable>
 
-          <View style={styles.navigationContainer}>
-            <Pressable
-              testID="previous-button"
-              style={[
-                styles.navButton,
-                styles.previousButton,
-                !hasPreviousSet && styles.navButtonDisabled,
-              ]}
-              onPress={handlePrevious}
-              disabled={!hasPreviousSet}
-            >
-              <Text style={[styles.navButtonText, !hasPreviousSet && styles.navButtonTextDisabled]}>
-                ← Previous
-              </Text>
-            </Pressable>
-
-            <Pressable
-              testID="next-button"
-              style={[
-                styles.navButton,
-                styles.nextButton,
-                { backgroundColor: getOperationColor() },
-              ]}
-              onPress={handleNext}
-            >
-              <Text style={styles.navButtonText}>Next →</Text>
-            </Pressable>
+              <Pressable
+                testID="next-button"
+                style={[
+                  styles.navButton,
+                  styles.nextButton,
+                  { backgroundColor: getOperationColor(), paddingVertical: s(16), borderRadius: s(16) },
+                ]}
+                onPress={handleNext}
+              >
+                <Text style={[styles.navButtonText, { fontSize: fs(18) }]}>Next →</Text>
+              </Pressable>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -233,20 +254,17 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  innerContainer: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 22,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -261,22 +279,16 @@ const styles = StyleSheet.create({
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
   },
   scoreItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
   scoreNumber: {
-    fontSize: 18,
     fontWeight: '700' as const,
     color: '#333',
   },
   resetButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -284,22 +296,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   resetButtonText: {
-    fontSize: 16,
     fontWeight: '700' as const,
     color: '#fff',
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    gap: 16,
-  },
+  scrollContent: {},
   questionCard: {
     backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
     borderWidth: 3,
     borderColor: '#90CAF9',
     shadowColor: '#000',
@@ -314,19 +319,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   questionText: {
-    fontSize: 32,
     fontWeight: '700' as const,
     color: '#333',
   },
   answerInput: {
-    width: 70,
-    fontSize: 24,
     fontWeight: '600' as const,
     color: '#333',
     backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
     borderWidth: 2,
     borderColor: '#E0E0E0',
     textAlign: 'center',
@@ -348,14 +347,9 @@ const styles = StyleSheet.create({
   },
   navigationContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
   },
   navButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -374,7 +368,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   navButtonText: {
-    fontSize: 18,
     fontWeight: '700' as const,
     color: '#fff',
   },
