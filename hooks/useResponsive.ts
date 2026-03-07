@@ -10,14 +10,15 @@ export function useResponsive() {
   return useMemo(() => {
     const scaleX = width / BASE_WIDTH;
     const scaleY = height / BASE_HEIGHT;
-    const scale = Math.min(scaleX, scaleY);
     const isTablet = width >= 768;
     const isLargeTablet = width >= 1024;
+
+    const scale = isTablet ? scaleX : Math.min(scaleX, scaleY);
 
     const s = (size: number) => Math.round(size * scale);
 
     const fs = (size: number) => {
-      const factor = isTablet ? Math.min(scale, 1.6) : scale;
+      const factor = isTablet ? Math.min(scaleX, 2.2) : Math.min(scaleX, scaleY);
       return Math.round(size * factor);
     };
 
@@ -26,7 +27,7 @@ export function useResponsive() {
 
     const columns = isLargeTablet ? 3 : isTablet ? 2 : 1;
 
-    const contentMaxWidth = isTablet ? Math.min(width * 0.85, 900) : width;
+    const contentMaxWidth = width;
 
     return {
       width,
